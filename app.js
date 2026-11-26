@@ -9,12 +9,16 @@
   var fileInput = document.getElementById('file-input');
   var uploadBtn = document.getElementById('upload-btn');
   var collageBtn = document.getElementById('collage-btn');
-  var snapshotBtn = document.getElementById('snapshot-btn');
+  var saveImageBtn = document.getElementById('save-image-btn');
+  var videoBtn = document.getElementById('video-btn');
   var resetBtn = document.getElementById('reset-btn');
   var modeToggle = document.getElementById('mode-toggle');
 
   var mode = 'cut'; // 'cut' | 'duplicate'
   var collageMode = false;
+  var mediaRecorder = null;
+  var recordedChunks = [];
+  var isRecording = false;
   var viewWidth = 0;
   var viewHeight = 0;
   var dpr = window.devicePixelRatio || 1;
@@ -105,7 +109,8 @@
         emptyState.classList.add('hidden');
         canvas.classList.add('can-draw');
         collageBtn.disabled = false;
-        snapshotBtn.disabled = false;
+        saveImageBtn.disabled = false;
+        videoBtn.disabled = !(canvas.captureStream && typeof MediaRecorder !== 'undefined');
         resetBtn.disabled = false;
       };
       img.src = ev.target.result;
@@ -113,7 +118,7 @@
     reader.readAsDataURL(file);
   }
 
-  function takeSnapshot() {
+  function saveImage() {
     if (!sourceImage) return;
 
     var snapCanvas = document.createElement('canvas');
@@ -146,11 +151,11 @@
 
     // Download photo of current status
     var link = document.createElement('a');
-    link.download = 'gravity-snapshot.png';
+    link.download = 'gravity-image.png';
     link.href = dataUrl;
     link.click();
 
-    // Freeze the snapshot as the new background image for further cutouts
+    // Freeze the saved image as the new background for further cutouts
     var snapImg = new Image();
     snapImg.onload = function () {
       sourceImage = snapImg;
@@ -164,6 +169,77 @@
       updateImageRect();
     };
     snapImg.src = dataUrl;
+  }
+
+  function getSupportedVideoMimeType() {
+    if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) {
+      return '';
+    }
+    var candidates = [
+      'video/mp4',
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm'
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      if (MediaRecorder.isTypeSupported(candidates[i])) {
+        return candidates[i];
+      }
+    }
+    return '';
+  }
+
+  function startVideo() {
+    if (!canvas.captureStream || typeof MediaRecorder === 'undefined' || isRecording) return;
+
+    var stream = canvas.captureStream(30);
+    var mimeType = getSupportedVideoMimeType();
+    recordedChunks = [];
+
+    try {
+      mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType: mimeType })
+        : new MediaRecorder(stream);
+    } catch (err) {
+      mediaRecorder = new MediaRecorder(stream);
+    }
+
+    mediaRecorder.ondataavailable = function (ev) {
+      if (ev.data && ev.data.size > 0) {
+        recordedChunks.push(ev.data);
+      }
+    };
+
+    mediaRecorder.onstop = function () {
+      var actualMime = (mediaRecorder && mediaRecorder.mimeType) || mimeType || 'video/webm';
+      var ext = actualMime.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+      var blob = new Blob(recordedChunks, { type: actualMime });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.download = 'gravity-video.' + ext;
+      link.href = url;
+      link.click();
+      setTimeout(function () {
+        URL.revokeObjectURL(url);
+      }, 2000);
+      recordedChunks = [];
+      isRecording = false;
+      videoBtn.textContent = 'Start Video';
+      videoBtn.classList.remove('recording');
+      videoBtn.setAttribute('aria-pressed', 'false');
+    };
+
+    mediaRecorder.start(250);
+    isRecording = true;
+    videoBtn.textContent = 'Stop Video';
+    videoBtn.classList.add('recording');
+    videoBtn.setAttribute('aria-pressed', 'true');
+  }
+
+  function stopVideo() {
+    if (mediaRecorder && isRecording && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
   }
 
   function getCanvasPoint(clientX, clientY) {
@@ -379,8 +455,16 @@
     canvas.classList.remove('collage-dragging');
   });
 
-  snapshotBtn.addEventListener('click', function () {
-    takeSnapshot();
+  saveImageBtn.addEventListener('click', function () {
+    saveImage();
+  });
+
+  videoBtn.addEventListener('click', function () {
+    if (isRecording) {
+      stopVideo();
+    } else {
+      startVideo();
+    }
   });
 
   resetBtn.addEventListener('click', function () {
