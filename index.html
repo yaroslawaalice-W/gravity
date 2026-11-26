@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Gravity</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="toolbar" aria-label="Gravity controls">
+    <div class="brand">Gravity</div>
+
+    <div class="controls">
+      <div class="mode-slider" role="group" aria-label="Cutout mode">
+        <button
+          type="button"
+          id="mode-toggle"
+          class="mode-track"
+          role="switch"
+          aria-checked="false"
+          data-mode="cut"
+          title="Switch between Cut and Duplicate"
+        >
+          <span class="mode-thumb" aria-hidden="true"></span>
+          <span class="mode-label mode-label-cut">Cut</span>
+          <span class="mode-label mode-label-dup">Duplicate</span>
+        </button>
+      </div>
+
+      <button type="button" id="upload-btn" class="btn btn-primary">Upload Image</button>
+      <input type="file" id="file-input" accept="image/*" hidden />
+
+      <button type="button" id="collage-btn" class="btn" aria-pressed="false" disabled>Collage</button>
+      <button type="button" id="snapshot-btn" class="btn" disabled>Snapshot</button>
+      <button type="button" id="reset-btn" class="btn" disabled>Reset</button>
+    </div>
+  </header>
+
+  <main id="stage" class="stage">
+    <canvas id="gravity-canvas"></canvas>
+
+    <div id="empty-state" class="empty-state">
+      <button type="button" id="empty-upload-btn" class="empty-card">
+        <p class="empty-title">Drop or tap to add an image</p>
+        <p class="empty-subtitle">Draw any shape to let it float in zero gravity</p>
+      </button>
+    </div>
+  </main>
+
+  <script src="geometry.js"></script>
+  <script src="physics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
