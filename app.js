@@ -96,8 +96,17 @@
     updateImageRect();
   }
 
+  function isLikelyImageFile(file) {
+    if (!file) return false;
+    if (file.type && file.type.indexOf('image/') === 0) return true;
+    if (!file.type && file.name) {
+      return /\.(png|jpe?g|gif|webp|svg|bmp|avif|heic|heif)$/i.test(file.name);
+    }
+    return false;
+  }
+
   function loadImageFile(file) {
-    if (!file || !file.type || file.type.indexOf('image/') !== 0) {
+    if (!isLikelyImageFile(file)) {
       return;
     }
     var reader = new FileReader();
@@ -106,12 +115,14 @@
       img.onload = function () {
         originalImage = img;
         resetBaseImage();
-        emptyState.classList.add('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
         canvas.classList.add('can-draw');
-        collageBtn.disabled = false;
-        saveImageBtn.disabled = false;
-        videoBtn.disabled = !(canvas.captureStream && typeof MediaRecorder !== 'undefined');
-        resetBtn.disabled = false;
+        if (collageBtn) collageBtn.disabled = false;
+        if (saveImageBtn) saveImageBtn.disabled = false;
+        if (videoBtn) {
+          videoBtn.disabled = !(canvas.captureStream && typeof MediaRecorder !== 'undefined');
+        }
+        if (resetBtn) resetBtn.disabled = false;
       };
       img.src = ev.target.result;
     };
