@@ -139,6 +139,12 @@ body {
   font-weight: 600;
 }
 
+.btn.recording {
+  background: rgba(239, 68, 68, 0.24);
+  border-color: rgba(248, 113, 113, 0.75);
+  color: #fecaca;
+}
+
 .btn-primary {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.26);
